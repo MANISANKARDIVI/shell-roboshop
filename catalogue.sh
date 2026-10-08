@@ -68,8 +68,8 @@ VALIDATE $? "Extracting catalogue zip file"
 npm install &>>$LOG_NAME
 VALIDATE $? "Installing nodejs dependencies"
 
-cat /etc/systemd/system/catalogue.service
-cp $SCRIPT_DIR/catalogue.service /etc/systemd/system/catalogue.service
+cp $SCRIPT_DIR/catalogue.service /etc/systemd/system/catalogue.service &>>$LOG_NAME
+VALIDATE $? "Copying catalogue systemd service file"
 
 systemctl daemon-reload &>>$LOG_NAME
 systemctl enable catalogue &>>$LOG_NAME
@@ -77,6 +77,8 @@ systemctl start catalogue &>>$LOG_NAME
 VALIDATE $? "Starting catalogue service"
 
 cp $SCRIPT_DIR/mongodb.repo /etc/yum.repos.d/mongo.repo &>>$LOG_NAME
+VALIDATE $? "Copying mongodb repo file"
+
 dnf install mongodb-mongosh -y &>>$LOG_NAME
 VALIDATE $? "Installing mongodb-mongosh"
 
