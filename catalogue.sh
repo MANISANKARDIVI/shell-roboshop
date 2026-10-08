@@ -52,17 +52,24 @@ VALIDATE $? "Enabling nodejs module"
 dnf install nodejs -y &>>$LOG_NAME
 VALIDATE $? "Installing nodejs"
 
-useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop
-VALIDATE $? "Creating roboshop system user"
+id roboshop
+if [ $? -ne 0 ]
+then
+    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_NAME
+    VALIDATE $? "Creating roboshop system user"
+else
+    echo -e "System user roboshop already created ... $Y SKIPPING $N" | tee -a $LOG_NAME
+fi
 
-mkdir /app
+mkdir -p /app
 VALIDATE $? "Creating /app directory"
 
-curl -o /tmp/catalogue.zip https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip
+curl -o /tmp/catalogue.zip https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip &>>$LOG_NAME
 VALIDATE $? "Downloading catalogue zip file"
 
+rm -rf /app/*
 cd /app
-unzip /tmp/catalogue.zip
+unzip /tmp/catalogue.zip &>>$LOG_NAME
 VALIDATE $? "Extracting catalogue zip file"
 
 npm install &>>$LOG_NAME
@@ -76,7 +83,7 @@ systemctl enable catalogue &>>$LOG_NAME
 systemctl start catalogue &>>$LOG_NAME
 VALIDATE $? "Starting catalogue service"
 
-cp $SCRIPT_DIR/mongodb.repo /etc/yum.repos.d/mongo.repo &>>$LOG_NAME
+cp $SCRIPT_DIR/mongo.repo /etc/yum.repos.d/mongo.repo &>>$LOG_NAME
 VALIDATE $? "Copying mongodb repo file"
 
 dnf install mongodb-mongosh -y &>>$LOG_NAME
@@ -85,12 +92,13 @@ VALIDATE $? "Installing mongodb-mongosh"
 mongosh --host mongodb.manisankardivi.online </app/db/master-data.js &>>$LOG_NAME
 VALIDATE $? "Loading catalogue schema"
 
+STATUS=$(mongosh --host mongodb.manisankardivi.online --eval 'db.getMongo().getDBNames().indexOf("catalogue")')
+if [ $STATUS -lt 0 ]
+then
+    mongosh --host mongodb.manisankardivi.online </app/db/master-data.js &>>$LOG_NAME
+    VALIDATE $? "Loading data into MongoDB"
+else
+    echo -e "Data is already loaded ... $Y SKIPPING $N" | tee -a $LOG_NAME
+fi
+
 echo "Script finished executing at: $(date)" | tee -a $LOG_NAME
-
-
-
-
-
-
-
-
