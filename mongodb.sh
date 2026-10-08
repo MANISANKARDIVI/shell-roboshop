@@ -56,11 +56,7 @@ VALIDATE $? "Updating mongodb bind address"
 systemctl restart mongod &>>$LOG_NAME
 VALIDATE $? "Restarting mongodb service"
 
-
-
-
-
-
+echo "Script finished executing at: $(date)" | tee -a $LOG_NAME
 
 
 
