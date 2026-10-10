@@ -53,23 +53,28 @@ VALIDATE $? "Enabling NodeJS module 20"
 dnf install nodejs -y &>>$LOG_NAME
 VALIDATE $? "Installing NodeJS"
 
-useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_NAME
-VALIDATE $? "Creating roboshop system user"
+id roboshop
+if [ $? -ne 0 ]
+then
+    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_FILE
+    VALIDATE $? "Creating roboshop system user"
+else
+    echo -e "System user roboshop already created ... $Y SKIPPING $N"
+fi
 
-mkdir /app &>>$LOG_NAME
+mkdir -p /app &>>$LOG_NAME
 VALIDATE $? "Creating /app directory"
 
 curl -L -o /tmp/user.zip https://roboshop-artifacts.s3.amazonaws.com/user-v3.zip  &>>$LOG_NAME
 VALIDATE $? "Downloading user service zip file"
 
+rm -rf /app/*
 cd /app
 unzip /tmp/user.zip &>>$LOG_NAME
 VALIDATE $? "Extracting user service zip file"
 
-cd /app
 npm install &>>$LOG_NAME
 VALIDATE $? "Installing user service dependencies"
-
 
 cp $SCRIPT_DIR/user.service /etc/systemd/system/user.service &>>$LOG_NAME
 VALIDATE $? "Copying user service file"
