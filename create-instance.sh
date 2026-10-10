@@ -13,24 +13,11 @@ SG_ID="sg-0e4707bf1d18b6898"
 ZONE_ID="Z00088451NX8RO0IJKRPT"
 DOMAIN_NAME="manisankardivi.online"
 
-INSTANCES=(
-    "mongodb"
-    "redis"
-    "mysql"
-    "frontend"
-    "cart"
-    "catalogue"
-    "user"
-    "shipping"
-    "payment"
-    "rabbitmq"
-    "dispatch"
-)
+INSTANCES=("mongodb" "redis" "mysql" "frontend" "cart" "catalogue" "user" "shipping" "payment" "rabbitmq" "dispatch")
 
 
 for instance in "${INSTANCES[@]}"
 do
-
     INSTANCE_ID=$(aws ec2 run-instances \
         --image-id "$AMI_ID" \
         --instance-type t2.micro \
@@ -45,39 +32,34 @@ do
             --instance-ids "$INSTANCE_ID" \
             --query "Reservations[0].Instances[0].PrivateIpAddress" \
             --output text)
+        RECORD_NAME="$instance.$DOMAIN_NAME"
+
     else
         IP=$(aws ec2 describe-instances \
             --instance-ids "$INSTANCE_ID" \
             --query "Reservations[0].Instances[0].PublicIpAddress" \
             --output text)
+        RECORD_NAME="$DOMAIN_NAME"
     fi
 
     echo "$instance IPAddress: $IP"
 
-    CHANGE_BATCH=$(cat <<EOF
-{
-  "Comment": "Creating or updating A record",
-  "Changes": [
-    {
-      "Action": "UPSERT",
-      "ResourceRecordSet": {
-        "Name": "$instance.$DOMAIN_NAME",
-        "Type": "A",
-        "TTL": 1,
-        "ResourceRecords": [
-          {
-            "Value": "$IP"
-          }
-        ]
-      }
-    }
-  ]
-}
-EOF
-)
-
     aws route53 change-resource-record-sets \
-        --hosted-zone-id "$ZONE_ID" \
-        --change-batch "$CHANGE_BATCH"
+    --hosted-zone-id $ZONE_ID \
+    --change-batch '
+    {
+        "Comment": "Creating or Updating a record set for cognito endpoint"
+        ,"Changes": [{
+        "Action"              : "UPSERT"
+        ,"ResourceRecordSet"  : {
+            "Name"              : "'$RECORD_NAME'"
+            ,"Type"             : "A"
+            ,"TTL"              : 1
+            ,"ResourceRecords"  : [{
+                "Value"         : "'$IP'"
+            }]
+        }
+        }]
+    }'
 
 done
