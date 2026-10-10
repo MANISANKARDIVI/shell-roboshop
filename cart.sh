@@ -54,10 +54,9 @@ dnf install nodejs -y &>>$LOG_NAME
 VALIDATE $? "Installing NodeJS"
 
 id roboshop
-
 if [ $? -ne 0 ]
 then
-    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_FILE
+    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_NAME
     VALIDATE $? "Creating roboshop system user"
 else
     echo -e "System user roboshop already created ... $Y SKIPPING $N"
@@ -66,22 +65,22 @@ fi
 mkdir -p /app &>>$LOG_NAME
 VALIDATE $? "Creating /app directory"
 
-curl -o /tmp/cart.zip https://roboshop-artifacts.s3.amazonaws.com/cart-v3.zip &>>$LOG_FILE
+curl -o /tmp/cart.zip https://roboshop-artifacts.s3.amazonaws.com/cart-v3.zip &>>$LOG_NAME
 VALIDATE $? "Downloading user service zip file"
 
 rm -rf /app/*
 cd /app
-unzip /tmp/cart.zip &>>$LOG_FILE
+unzip /tmp/cart.zip &>>$LOG_NAME
 VALIDATE $? "unzipping cart"
 
-npm install &>>$LOG_FILE
+npm install &>>$LOG_NAME
 VALIDATE $? "Installing Dependencies"
 
 cp $SCRIPT_DIR/cart.service /etc/systemd/system/cart.service
 VALIDATE $? "Copying cart service"
 
-systemctl daemon-reload &>>$LOG_FILE
-systemctl enable cart  &>>$LOG_FILE
+systemctl daemon-reload &>>$LOG_NAME
+systemctl enable cart  &>>$LOG_NAME
 systemctl start cart &>>$LOG_NAME
 VALIDATE $? "Starting cart"
 
