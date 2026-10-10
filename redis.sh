@@ -54,10 +54,10 @@ VALIDATE $? "Installing Redis"
 sed -i -e 's/127.0.0.1/0.0.0.0/g' -e '/protected-mode/ c protected-mode no' /etc/redis/redis.conf
 VALIDATE $? "Edited redis.conf to accept remote connections"
 
-systemctl enable redis:7 &>>$LOG_NAME
+systemctl enable redis&>>$LOG_NAME
 VALIDATE $? "Enabling Redis service"
 
-systemctl start redis:7 &>>$LOG_NAME
+systemctl start redis &>>$LOG_NAME
 VALIDATE $? "Starting Redis service"
 
 END_TIME=$(date +%s)
