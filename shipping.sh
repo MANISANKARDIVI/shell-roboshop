@@ -46,10 +46,9 @@ dnf install maven -y &>>"$LOG_NAME"
 VALIDATE $? "Maven Installation"
 
 id roboshop
-
 if [ $? -ne 0 ]
 then
-    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_FILE
+    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_NAME
     VALIDATE $? "Creating roboshop system user"
 else
     echo -e "System user roboshop already created ... $Y SKIPPING $N"
@@ -67,41 +66,41 @@ cd /app
 unzip /tmp/shipping.zip &>>"$LOG_NAME"
 VALIDATE $? "Extracting Shipping Service Artifact"
 
-mvn clean package  &>>$LOG_FILE
+mvn clean package  &>>$LOG_NAME
 VALIDATE $? "Packaging the shipping application"
 
-mv target/shipping-1.0.jar shipping.jar  &>>$LOG_FILE
+mv target/shipping-1.0.jar shipping.jar  &>>$LOG_NAME
 VALIDATE $? "Moving and renaming Jar file"
 
 cp $SCRIPT_DIR/shipping.service /etc/systemd/system/shipping.service
 
-systemctl daemon-reload &>>$LOG_FILE
+systemctl daemon-reload &>>$LOG_NAME
 VALIDATE $? "Daemon Realod"
 
-systemctl enable shipping  &>>$LOG_FILE
+systemctl enable shipping  &>>$LOG_NAME
 VALIDATE $? "Enabling Shipping"
 
-systemctl start shipping &>>$LOG_FILE
+systemctl start shipping &>>$LOG_NAME
 VALIDATE $? "Starting Shipping"
 
-dnf install mysql -y  &>>$LOG_FILE
+dnf install mysql -y  &>>$LOG_NAME
 VALIDATE $? "Install MySQL"
 
 echo "Please enter root password to setup"
 read -s MYSQL_ROOT_PASSWORD
 
-mysql -h mysql.manisankardivi.online -u root -p$MYSQL_ROOT_PASSWORD -e 'use cities' &>>$LOG_FILE
+mysql -h mysql.manisankardivi.online -u root -p$MYSQL_ROOT_PASSWORD -e 'use cities' &>>$LOG_NAME
 if [ $? -ne 0 ]
 then
-    mysql -h mysql.manisankardivi.online -uroot -p$MYSQL_ROOT_PASSWORD < /app/db/schema.sql &>>$LOG_FILE
-    mysql -h mysql.manisankardivi.online -uroot -p$MYSQL_ROOT_PASSWORD < /app/db/app-user.sql  &>>$LOG_FILE
-    mysql -h mysql.manisankardivi.online -uroot -p$MYSQL_ROOT_PASSWORD < /app/db/master-data.sql &>>$LOG_FILE
+    mysql -h mysql.manisankardivi.online -uroot -p$MYSQL_ROOT_PASSWORD < /app/db/schema.sql &>>$LOG_NAME
+    mysql -h mysql.manisankardivi.online -uroot -p$MYSQL_ROOT_PASSWORD < /app/db/app-user.sql  &>>$LOG_NAME
+    mysql -h mysql.manisankardivi.online -uroot -p$MYSQL_ROOT_PASSWORD < /app/db/master-data.sql &>>$LOG_NAME
     VALIDATE $? "Loading data into MySQL"
 else
     echo -e "Data is already loaded into MySQL ... $Y SKIPPING $N"
 fi
 
-systemctl restart shipping &>>$LOG_FILE
+systemctl restart shipping &>>$LOG_NAME
 VALIDATE $? "Restart shipping"
 
 
