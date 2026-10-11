@@ -42,10 +42,10 @@ VALIDATE(){
     fi
 }
 
-dnf install maven -y &>>"$LOG_NAME"
-VALIDATE $? "Installing Maven & Java"
+dnf install maven -y &>>$LOG_LOG_NAME
+VALIDATE $? "Installing Maven and Java"
 
-id roboshop &>>"$LOG_NAME"
+id roboshop &>>$LOG_NAME
 if [ $? -ne 0 ]
 then
     useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_NAME
@@ -54,16 +54,16 @@ else
     echo -e "System user roboshop already created ... $Y SKIPPING $N"
 fi
 
-mkdir -p /app &>>"$LOG_NAME"
-VALIDATE $? "Creating /app directory"
+mkdir -p /app
+VALIDATE $? "Creating app directory"
 
-curl -L -o /tmp/shipping.zip https://roboshop-artifacts.s3.amazonaws.com/shipping-v3.zip &>>"$LOG_NAME"
-VALIDATE $? "Downloading Shipping Service Artifact"
+curl -o /tmp/shipping.zip https://roboshop-artifacts.s3.amazonaws.com/shipping-v3.zip &>>$LOG_NAME
+VALIDATE $? "Downloading shipping"
 
 rm -rf /app/*
 cd /app
-unzip /tmp/shipping.zip &>>"$LOG_NAME"
-VALIDATE $? "Extracting Shipping Service Artifact"
+unzip /tmp/shipping.zip &>>$LOG_NAME
+VALIDATE $? "unzipping shipping"
 
 mvn clean package  &>>$LOG_NAME
 VALIDATE $? "Packaging the shipping application"
@@ -72,6 +72,7 @@ mv target/shipping-1.0.jar shipping.jar  &>>$LOG_NAME
 VALIDATE $? "Moving and renaming Jar file"
 
 cp $SCRIPT_DIR/shipping.service /etc/systemd/system/shipping.service
+VALIDATE $? "Copying shipping.service file"
 
 systemctl daemon-reload &>>$LOG_NAME
 VALIDATE $? "Daemon Reload"
@@ -85,7 +86,7 @@ VALIDATE $? "Starting Shipping"
 dnf install mysql -y  &>>$LOG_NAME
 VALIDATE $? "Install MySQL"
 
-echo "Enter your mysql root password:"
+echo "Please enter root password to setup"
 read -s password
 
 mysql -h mysql.manisankardivi.online -u root -p$password -e 'use cities' &>>$LOG_NAME
@@ -101,7 +102,6 @@ fi
 
 systemctl restart shipping &>>$LOG_NAME
 VALIDATE $? "Restart shipping"
-
 
 END_TIME=$(date +%s)
 echo -e "$Y Script execution time: $(($END_TIME - $START_TIME)) seconds $N" | tee -a "$LOG_NAME"
