@@ -49,10 +49,10 @@ VALIDATE $? "Installing Python3, GCC, and Python3-devel"
 id roboshop &>>$LOG_FILE
 if [ $? -ne 0 ]
 then
-    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_FILE
+    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_LOG_NAME
     VALIDATE $? "Creating roboshop system user"
 else
-    echo -e "System user roboshop already created ... $Y SKIPPING $N"
+    echo -e "System user roboshop already created ... $Y SKIPPING $N" &>>$LOG_LOG_NAME
 fi
 
 
@@ -77,10 +77,10 @@ VALIDATE $? "Copying payment.service to systemd directory"
 systemctl daemon-reload &>>"$LOG_NAME"
 VALIDATE $? "Reloading systemd daemon"
 
-systemctl enable payment &>>"LOG_NAME"
+systemctl enable payment &>>$LOG_NAME
 VALIDATE $? "Enabled payment service"
 
-systemctl start payment &>>"LOG_NAME"
+systemctl start payment &>>"$LOG_NAME"
 VALIDATE $? "started payment service"
 
 END_TIME=$(date +%s)
