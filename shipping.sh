@@ -43,9 +43,9 @@ VALIDATE(){
 }
 
 dnf install maven -y &>>"$LOG_NAME"
-VALIDATE $? "Maven Installation"
+VALIDATE $? "Installing Maven & Java"
 
-id roboshop
+id roboshop &>>"$LOG_NAME"
 if [ $? -ne 0 ]
 then
     useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_NAME
@@ -59,7 +59,6 @@ VALIDATE $? "Creating /app directory"
 
 curl -L -o /tmp/shipping.zip https://roboshop-artifacts.s3.amazonaws.com/shipping-v3.zip &>>"$LOG_NAME"
 VALIDATE $? "Downloading Shipping Service Artifact"
-
 
 rm -rf /app/*
 cd /app
@@ -86,15 +85,15 @@ VALIDATE $? "Starting Shipping"
 dnf install mysql -y  &>>$LOG_NAME
 VALIDATE $? "Install MySQL"
 
-echo "Please enter root password to setup"
-read -s MYSQL_ROOT_PASSWORD
+echo "Enter your mysql root password:"
+read -s password
 
-mysql -h mysql.manisankardivi.online -u root -p$MYSQL_ROOT_PASSWORD -e 'use cities' &>>$LOG_NAME
+mysql -h mysql.manisankardivi.online -u root -p$password -e 'use cities' &>>$LOG_NAME
 if [ $? -ne 0 ]
 then
-    mysql -h mysql.manisankardivi.online -uroot -p$MYSQL_ROOT_PASSWORD < /app/db/schema.sql &>>$LOG_NAME
-    mysql -h mysql.manisankardivi.online -uroot -p$MYSQL_ROOT_PASSWORD < /app/db/app-user.sql  &>>$LOG_NAME
-    mysql -h mysql.manisankardivi.online -uroot -p$MYSQL_ROOT_PASSWORD < /app/db/master-data.sql &>>$LOG_NAME
+    mysql -h mysql.manisankardivi.online -uroot -p$password < /app/db/schema.sql &>>$LOG_NAME
+    mysql -h mysql.manisankardivi.online -uroot -p$password < /app/db/app-user.sql  &>>$LOG_NAME
+    mysql -h mysql.manisankardivi.online -uroot -p$password < /app/db/master-data.sql &>>$LOG_NAME
     VALIDATE $? "Loading data into MySQL"
 else
     echo -e "Data is already loaded into MySQL ... $Y SKIPPING $N"
