@@ -14,7 +14,7 @@ N="\e[0m"
 
 # Log folder and file
 LOG_FOLDER="/var/log/roboshop-logs"
-SCRIPT_NAME=$( echo $0 | cut -d "." -f 1)
+SCRIPT_NAME=$(basename "$0" .sh)
 LOG_NAME="$LOG_FOLDER/$SCRIPT_NAME.log"
 SCRIPT_DIR=$(pwd)
 

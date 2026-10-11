@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+
 # Start time
 START_TIME=$(date +%s)
 
@@ -41,24 +42,21 @@ VALIDATE(){
     fi
 }
 
-dnf module disable redis -y &>>$LOG_NAME
-VALIDATE $? "Disabling Redis module"
+dnf install mysql-server -y &>>$LOG_NAME
+VALIDATE $? "MySQL Server Installation"
 
-dnf module enable redis:7 -y &>>$LOG_NAME
-VALIDATE $? "Enabling Redis module 7"
+systemctl enable mysqld &>>$LOG_NAME
+VALIDATE $? "Enabling MySQL Service"
 
-# installing redis
-dnf install redis -y &>>$LOG_NAME
-VALIDATE $? "Installing Redis"
+systemctl start mysqld &>>$LOG_NAME
+VALIDATE $? "Starting MySQL Service"
 
-sed -i -e 's/127.0.0.1/0.0.0.0/g' -e '/protected-mode/ c protected-mode no' /etc/redis/redis.conf
-VALIDATE $? "Edited redis.conf to accept remote connections"
+echo "enter your mysql root password:""
+read -s password
 
-systemctl enable redis&>>$LOG_NAME
-VALIDATE $? "Enabling Redis service"
+mysql_secure_installation --set-root-pass $password &>>$LOG_NAME
+VALIDATE $? "Securing MySQL password"
 
-systemctl start redis &>>$LOG_NAME
-VALIDATE $? "Starting Redis service"
 
 END_TIME=$(date +%s)
-echo "Script execution time: $(($END_TIME - $START_TIME)) seconds" | tee -a $LOG_NAME
+echo "Script execution time: $Y $(($END_TIME - $START_TIME)) seconds $N" | tee -a $LOG_NAME
