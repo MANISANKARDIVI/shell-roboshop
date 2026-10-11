@@ -42,7 +42,7 @@ VALIDATE(){
     fi
 }
 
-dnf install maven -y &>>$LOG_LOG_NAME
+dnf install maven -y &>>$LOG_NAME
 VALIDATE $? "Installing Maven and Java"
 
 id roboshop &>>$LOG_NAME
@@ -51,7 +51,7 @@ then
     useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_NAME
     VALIDATE $? "Creating roboshop system user"
 else
-    echo -e "System user roboshop already created ... $Y SKIPPING $N"
+    echo -e "System user roboshop already created ... $Y SKIPPING $N" | tee -a "$LOG_NAME"
 fi
 
 mkdir -p /app
@@ -97,7 +97,7 @@ then
     mysql -h mysql.manisankardivi.online -uroot -p$password < /app/db/master-data.sql &>>$LOG_NAME
     VALIDATE $? "Loading data into MySQL"
 else
-    echo -e "Data is already loaded into MySQL ... $Y SKIPPING $N"
+    echo -e "Data is already loaded into MySQL ... $Y SKIPPING $N" | tee -a "$LOG_NAME"
 fi
 
 systemctl restart shipping &>>$LOG_NAME
