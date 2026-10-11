@@ -49,10 +49,10 @@ VALIDATE $? "Installing Python3, GCC, and Python3-devel"
 id roboshop &>>$LOG_FILE
 if [ $? -ne 0 ]
 then
-    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_LOG_NAME
+    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>"$LOG_NAME"
     VALIDATE $? "Creating roboshop system user"
 else
-    echo -e "System user roboshop already created ... $Y SKIPPING $N" &>>$LOG_LOG_NAME
+    echo -e "System user roboshop already created ... $Y SKIPPING $N" &>>"$LOG_NAME"
 fi
 
 
