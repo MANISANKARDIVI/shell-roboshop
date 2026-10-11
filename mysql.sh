@@ -51,7 +51,7 @@ VALIDATE $? "Enabling MySQL Service"
 systemctl start mysqld &>>"$LOG_NAME"
 VALIDATE $? "Starting MySQL Service"
 
-echo "enter your mysql root password:"
+echo "Enter your mysql root password:"
 read -s password
 
 mysql_secure_installation --set-root-pass "$password" &>>"$LOG_NAME"
