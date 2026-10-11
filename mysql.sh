@@ -59,4 +59,4 @@ VALIDATE $? "Securing MySQL password"
 
 
 END_TIME=$(date +%s)
-echo "Script execution time: $Y $(($END_TIME - $START_TIME)) seconds $N" | tee -a "$LOG_NAME"
+echo "$Y Script execution time: $(($END_TIME - $START_TIME)) seconds $N" | tee -a "$LOG_NAME"
