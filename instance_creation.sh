@@ -7,7 +7,7 @@ SG_ID="sg-0e4707bf1d18b6898"
 ZONE_ID="Z00088451NX8RO0IJKRPT"
 DOMAIN_NAME="manisankardivi.online"
 
-INSTANCES=$1
+INSTANCES=("redis" "mysql" "frontend" "cart" "user" "shipping" "payment" "rabbitmq" "dispatch")
 
 for instance in "${INSTANCES[@]}"
 do
