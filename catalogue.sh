@@ -93,7 +93,7 @@ VALIDATE $? "Installed mongosh"
 STATUS=$(mongosh --host mongodb.manisankardivi.online --eval 'db.getMongo().getDBNames().indexOf("catalogue")') &>/dev/null
 if [ "$STATUS" -lt 0 ]
 then
-  mongosh --host mongodb.manisankardivi.online </app/db/master-data.js
+  mongosh --host mongodb.manisankardivi.online </app/db/master-data.js &>/dev/null
   VALIDATE $? "Loading data into MongoDB"
 else
    echo "Data is already loaded ..."
