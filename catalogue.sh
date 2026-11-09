@@ -3,12 +3,14 @@
 set -euo pipefail
 
 USER_ID=$(id -u)
+SCRIPT_DIR=$(pwd)
 
 if [ "$USER_ID" -eq 0 ]
 then
   echo "USER have Root Access"
 else
   echo "USER Dont Root Access"
+  exit 1
 fi
 
 VALIDATE() {
@@ -63,7 +65,7 @@ npm install &>/dev/null
 VALIDATE $? "Installed node packages"
 
 # copying catalogue service file
-cp ./catalogue.service /etc/systemd/system/catalogue.service &>/dev/null
+cp $SCRIPT_DIR/catalogue.service /etc/systemd/system/catalogue.service &>/dev/null
 VALIDATE $? "copying catalogue.service file"
 
 # restart the service
@@ -80,7 +82,7 @@ VALIDATE $? "Start catalogue"
 
 
 # Install mongo client
-cp mongo.repo /etc/yum.repos.d/mongo.repo &>/dev/null
+cp $SCRIPT_DIR/mongo.repo /etc/yum.repos.d/mongo.repo &>/dev/null
 VALIDATE $? "Copied mongo.repo file"
 
 # Install mongosh
