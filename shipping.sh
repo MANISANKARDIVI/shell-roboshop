@@ -42,7 +42,7 @@ mvn clean package
 mv target/shipping-1.0.jar shipping.jar
 
 
-
+cp $DIR/shipping.service /etc/systemd/system/shipping.service
 
 systemctl daemon-reload
 systemctl enable shipping
