@@ -53,16 +53,15 @@ dnf install mysql -y
 echo "Please enter root password to setup"
 read -s password
 
-mysql -h mysql.manisankardivi.online -u root -p$password -e 'use cities'
-
-if [ $? -ne 0 ]
+if mysql -h mysql.manisankardivi.online -u root -p"$password" -e 'USE cities'
 then
-    mysql -h mysql.manisankardivi.online -uroot -p$password < /app/db/schema.sql
-    mysql -h mysql.manisankardivi.online -uroot -p$password < /app/db/app-user.sql
-    mysql -h mysql.manisankardivi.online -uroot -p$password < /app/db/master-data.sql
-    VALIDATE $? "Loading data into MySQL"
+    echo "Data is already loaded into MySQL ... SKIPPING"
 else
-    echo "Data is already loaded into MySQL ...SKIPPING"
+    mysql -h mysql.manisankardivi.online -u root -p"$password" < /app/db/schema.sql
+    mysql -h mysql.manisankardivi.online -u root -p"$password" < /app/db/app-user.sql
+    mysql -h mysql.manisankardivi.online -u root -p"$password" < /app/db/master-data.sql
+
+    echo "Loading data into MySQL ... SUCCESS"
 fi
 
 systemctl restart shipping
