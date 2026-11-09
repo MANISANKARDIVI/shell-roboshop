@@ -27,9 +27,9 @@ dnf install maven -y
 
 if id roboshop
 then
-  useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop
+  echo "user already exists"
 else
-  echo "Already user exists"
+  useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop
 fi
 
 mkdir -p /app
