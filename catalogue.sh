@@ -63,7 +63,7 @@ npm install &>/dev/null
 VALIDATE $? "Installed node packages"
 
 # copying catalogue service file
-cp catalogue.service /etc/systemd/system/catalogue.service &>/dev/null
+cp ./catalogue.service /etc/systemd/system/catalogue.service &>/dev/null
 VALIDATE $? "copying catalogue.service file"
 
 # restart the service
