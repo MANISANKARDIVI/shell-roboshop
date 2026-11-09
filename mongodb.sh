@@ -22,21 +22,23 @@ VALIDATE() {
 
 # copy mongo configuration file
 cp mongo.repo /etc/yum.repos.d/mongo.repo
-VALIDATE $1 "Copied configuration file"
+VALIDATE $? "Copied configuration file"
 
 # Install Mongodb
 dnf install mongodb-org -y
-VALIDATE $1 "Installed mongodb"
+VALIDATE $? "Installed mongodb"
 
 # Start & Enable the server
 systemctl enable mongod
-VALIDATE $1 "Mongo server enabled"
+VALIDATE $? "Mongo server enabled"
 
 systemctl start mongod
-VALIDATE $1 "Mongo server started"
+VALIDATE $? "Mongo server started"
 
 # update the port number 127.0.0.1 to 0.0.0.0
 sed -i -e "s/127.0.0.1/0.0.0.0/" /etc/mongod.conf
+VALIDATE $? "Updated port number"
 
 # Restart the mongo server
 systemctl restart mongod
+VALIDATE $? "Restarted mongodb server"
