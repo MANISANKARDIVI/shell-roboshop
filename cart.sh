@@ -49,6 +49,10 @@ cd /app
 
 unzip /tmp/cart.zip
 
+node -v
+npm -v
+ls -l
+
 npm install
 
 cp $DIR/cart.service /etc/systemd/system/cart.service
