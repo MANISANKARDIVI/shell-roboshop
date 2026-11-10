@@ -1,104 +1,104 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+# Get user ID
+USERID=$(id -u)
 
-USER_ID=$(id -u)
+# Colors
+R="\e[31m"
+G="\e[32m"
+Y="\e[33m"
+N="\e[0m"
+
+# Log folder and file
+LOG_FOLDER="/var/log/roboshop-logs"
+SCRIPT_NAME=$(basename "$0" .sh)
+LOG_NAME="$LOG_FOLDER/$SCRIPT_NAME.log"
 SCRIPT_DIR=$(pwd)
 
-if [ "$USER_ID" -eq 0 ]
+mkdir -p $LOG_FOLDER
+echo "Script started executing at: $(date)" | tee -a $LOG_NAME
+
+# check the user has root privileges or not
+if [ $USERID -ne 0 ]
 then
-  echo "USER have Root Access"
+    echo -e "$R ERROR:: Please run this script with root access $N" | tee -a $LOG_NAME
+    exit 1 #give other than 0 upto 127
 else
-  echo "USER Dont Root Access"
-  exit 1
+    echo "You are running with root access" | tee -a $LOG_NAME
 fi
 
-VALIDATE() {
-  if [ $1 -eq 0 ]
-  then
-    echo "$2 ... SUCCESS"
-  else
-    echo "$2 ... FAILED"
-  fi
+# validate functions takes input as exit status, what command they tried to install
+VALIDATE(){
+    if [ $1 -eq 0 ]
+    then
+        echo -e "$2 is ... $G SUCCESS $N" | tee -a $LOG_NAME
+    else
+        echo -e "$2 is ... $R FAILURE $N" | tee -a $LOG_NAME
+        exit 1
+    fi
 }
 
-# List nodejs modules
-dnf module list nodejs &>/dev/null
-VALIDATE $? "Listing the node modules"
-
-# Disable current module
-dnf module disable nodejs -y &>/dev/null
-VALIDATE $? "Disabled existing node version"
-
-# Enable required node version
-dnf module enable nodejs:20 -y &>/dev/null
-VALIDATE $? "Enabling node version"
-
-# Install Nodejs package
-dnf install nodejs -y &>/dev/null
-VALIDATE $? "Installed Nodejs"
 
 
-if id roboshop
+dnf module list nodejs &>>$LOG_NAME
+VALIDATE $? "Listing nodejs module"
+
+dnf module disable nodejs -y &>>$LOG_NAME
+VALIDATE $? "Disabling nodejs module"
+
+dnf module enable nodejs:20 -y &>>$LOG_NAME
+VALIDATE $? "Enabling nodejs module"
+
+dnf install nodejs -y &>>$LOG_NAME
+VALIDATE $? "Installing nodejs"
+
+id roboshop
+if [ $? -ne 0 ]
 then
-    echo "System user roboshop already created ..."
-else
-    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop
+    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_NAME
     VALIDATE $? "Creating roboshop system user"
-fi
-
-
-# create Directory
-mkdir -p /app &>/dev/null
-VALIDATE $? "Created directory"
-
-curl -o /tmp/catalogue.zip https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip &>/dev/null
-VALIDATE $? "Downloading catalogue packages"
-
-rm -rf /app/* &>/dev/null
-cd /app
-unzip /tmp/catalogue.zip &>/dev/null
-VALIDATE $? "Unzip files"
-
-# install packages
-npm install &>/dev/null
-VALIDATE $? "Installed node packages"
-
-# copying catalogue service file
-cp $SCRIPT_DIR/catalogue.service /etc/systemd/system/catalogue.service &>/dev/null
-VALIDATE $? "copying catalogue.service file"
-
-# restart the service
-systemctl daemon-reload &>/dev/null
-VALIDATE $? "Reload the daemon"
-
-# Enable the service
-systemctl enable catalogue &>/dev/null
-VALIDATE $? "Enable the catalogue"
-
-# Start the service
-systemctl start catalogue &>/dev/null
-VALIDATE $? "Start catalogue"
-
-
-# Install mongo client
-cp $SCRIPT_DIR/mongo.repo /etc/yum.repos.d/mongo.repo &>/dev/null
-VALIDATE $? "Copied mongo.repo file"
-
-# Install mongosh
-dnf install mongodb-mongosh -y &>/dev/null
-VALIDATE $? "Installed mongosh"
-
-# Load master data
-STATUS=$(mongosh --host mongodb.manisankardivi.online --eval 'db.getMongo().getDBNames().indexOf("catalogue")') &>/dev/null
-if [ "$STATUS" -lt 0 ]
-then
-  mongosh --host mongodb.manisankardivi.online </app/db/master-data.js &>/dev/null
-  VALIDATE $? "Loading data into MongoDB"
 else
-   echo "Data is already loaded ..."
+    echo -e "System user roboshop already created ... $Y SKIPPING $N" | tee -a $LOG_NAME
 fi
 
+mkdir -p /app
+VALIDATE $? "Creating /app directory"
 
+curl -o /tmp/catalogue.zip https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip &>>$LOG_NAME
+VALIDATE $? "Downloading catalogue zip file"
 
+rm -rf /app/*
+cd /app
+unzip /tmp/catalogue.zip &>>$LOG_NAME
+VALIDATE $? "Extracting catalogue zip file"
 
+npm install &>>$LOG_NAME
+VALIDATE $? "Installing nodejs dependencies"
+
+cp $SCRIPT_DIR/catalogue.service /etc/systemd/system/catalogue.service &>>$LOG_NAME
+VALIDATE $? "Copying catalogue systemd service file"
+
+systemctl daemon-reload &>>$LOG_NAME
+systemctl enable catalogue &>>$LOG_NAME
+systemctl start catalogue &>>$LOG_NAME
+VALIDATE $? "Starting catalogue service"
+
+cp $SCRIPT_DIR/mongo.repo /etc/yum.repos.d/mongo.repo &>>$LOG_NAME
+VALIDATE $? "Copying mongodb repo file"
+
+dnf install mongodb-mongosh -y &>>$LOG_NAME
+VALIDATE $? "Installing mongodb-mongosh"
+
+mongosh --host mongodb.manisankardivi.online </app/db/master-data.js &>>$LOG_NAME
+VALIDATE $? "Loading catalogue schema"
+
+STATUS=$(mongosh --host mongodb.manisankardivi.online --eval 'db.getMongo().getDBNames().indexOf("catalogue")')
+if [ $STATUS -lt 0 ]
+then
+    mongosh --host mongodb.manisankardivi.online </app/db/master-data.js &>>$LOG_NAME
+    VALIDATE $? "Loading data into MongoDB"
+else
+    echo -e "Data is already loaded ... $Y SKIPPING $N" | tee -a $LOG_NAME
+fi
+
+echo "Script finished executing at: $(date)" | tee -a $LOG_NAME

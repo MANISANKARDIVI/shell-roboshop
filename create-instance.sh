@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+# Create 11 instances of RoboShop application
+# Rename them
+# Update Route53 records
+# If instance is frontend:
+#     use public IP
+# Else:
+#     use private IP
 
-AMI_ID="ami-0055977a6e828a4f4"
+AMI_ID="ami-0220d79f3f480ecf5"
 SG_ID="sg-0e4707bf1d18b6898"
 ZONE_ID="Z00088451NX8RO0IJKRPT"
 DOMAIN_NAME="manisankardivi.online"
 
-INSTANCES=("redis" "mysql" "frontend" "cart" "user" "shipping" "payment" "rabbitmq" "dispatch")
+INSTANCES=("mongodb" "redis" "mysql" "frontend" "cart" "catalogue" "user" "shipping" "payment" "rabbitmq" "dispatch")
+
 
 for instance in "${INSTANCES[@]}"
 do
@@ -54,4 +61,5 @@ do
         }
         }]
     }'
+
 done

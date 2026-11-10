@@ -1,67 +1,107 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
 
-USER_ID=$(id -u)
-DIR=$(pwd)
+# Start time
+START_TIME=$(date +%s)
 
+# Get user ID
+USERID=$(id -u)
 
-if [ "$USER_ID" -eq 0 ]
+# Colors
+R="\e[31m"
+G="\e[32m"
+Y="\e[33m"
+N="\e[0m"
+
+# Log folder and file
+LOG_FOLDER="/var/log/roboshop-logs"
+SCRIPT_NAME=$(basename "$0" .sh)
+LOG_NAME="$LOG_FOLDER/$SCRIPT_NAME.log"
+SCRIPT_DIR=$(pwd)
+
+mkdir -p "$LOG_FOLDER"
+echo "Script started executing at: $(date)" | tee -a "$LOG_NAME"
+
+# check the user has root privileges or not
+if [ $USERID -ne 0 ]
 then
-  echo "USER have Root Access"
+    echo -e "$R ERROR:: Please run this script with root access $N" | tee -a "$LOG_NAME"
+    exit 1 #give other than 0 upto 127
 else
-  echo "USER Dont Root Access"
+    echo "You are running with root access" | tee -a "$LOG_NAME"
 fi
 
-VALIDATE() {
-  if [ $1 -eq 0 ]
-  then
-    echo "$2 ... SUCCESS"
-  else
-    echo "$2 ... FAILED"
-  fi
+# validate functions takes input as exit status, what command they tried to install
+VALIDATE(){
+    if [ $1 -eq 0 ]
+    then
+        echo -e "$2 is ... $G SUCCESS $N" | tee -a "$LOG_NAME"
+    else
+        echo -e "$2 is ... $R FAILURE $N" | tee -a "$LOG_NAME"
+        exit 1
+    fi
 }
 
+dnf install maven -y &>>$LOG_NAME
+VALIDATE $? "Installing Maven and Java"
 
-dnf install maven -y
-
-if id roboshop
+id roboshop &>>$LOG_NAME
+if [ $? -ne 0 ]
 then
-  echo "user already exists"
+    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_NAME
+    VALIDATE $? "Creating roboshop system user"
 else
-  useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop
+    echo -e "System user roboshop already created ... $Y SKIPPING $N" | tee -a "$LOG_NAME"
 fi
 
 mkdir -p /app
+VALIDATE $? "Creating app directory"
 
-curl -L -o /tmp/shipping.zip https://roboshop-artifacts.s3.amazonaws.com/shipping-v3.zip
+curl -o /tmp/shipping.zip https://roboshop-artifacts.s3.amazonaws.com/shipping-v3.zip &>>$LOG_NAME
+VALIDATE $? "Downloading shipping"
+
+rm -rf /app/*
 cd /app
-unzip /tmp/shipping.zip
+unzip /tmp/shipping.zip &>>$LOG_NAME
+VALIDATE $? "unzipping shipping"
 
-mvn clean package
-mv target/shipping-1.0.jar shipping.jar
+mvn clean package  &>>$LOG_NAME
+VALIDATE $? "Packaging the shipping application"
 
+mv target/shipping-1.0.jar shipping.jar  &>>$LOG_NAME
+VALIDATE $? "Moving and renaming Jar file"
 
-cp $DIR/shipping.service /etc/systemd/system/shipping.service
+cp $SCRIPT_DIR/shipping.service /etc/systemd/system/shipping.service
+VALIDATE $? "Copying shipping.service file"
 
-systemctl daemon-reload
-systemctl enable shipping
-systemctl start shipping
+systemctl daemon-reload &>>$LOG_NAME
+VALIDATE $? "Daemon Reload"
 
-dnf install mysql -y
+systemctl enable shipping  &>>$LOG_NAME
+VALIDATE $? "Enabling Shipping"
+
+systemctl start shipping &>>$LOG_NAME
+VALIDATE $? "Starting Shipping"
+
+dnf install mysql -y  &>>$LOG_NAME
+VALIDATE $? "Install MySQL"
 
 echo "Please enter root password to setup"
 read -s password
 
-if mysql -h mysql.manisankardivi.online -u root -p"$password" -e 'USE cities'
+mysql -h mysql.manisankardivi.online -u root -p$password -e 'use cities' &>>$LOG_NAME
+if [ $? -ne 0 ]
 then
-    echo "Data is already loaded into MySQL ... SKIPPING"
+    mysql -h mysql.manisankardivi.online -uroot -p$password < /app/db/schema.sql &>>$LOG_NAME
+    mysql -h mysql.manisankardivi.online -uroot -p$password < /app/db/app-user.sql  &>>$LOG_NAME
+    mysql -h mysql.manisankardivi.online -uroot -p$password < /app/db/master-data.sql &>>$LOG_NAME
+    VALIDATE $? "Loading data into MySQL"
 else
-    mysql -h mysql.manisankardivi.online -u root -p"$password" < /app/db/schema.sql
-    mysql -h mysql.manisankardivi.online -u root -p"$password" < /app/db/app-user.sql
-    mysql -h mysql.manisankardivi.online -u root -p"$password" < /app/db/master-data.sql
-
-    echo "Loading data into MySQL ... SUCCESS"
+    echo -e "Data is already loaded into MySQL ... $Y SKIPPING $N" | tee -a "$LOG_NAME"
 fi
 
-systemctl restart shipping
+systemctl restart shipping &>>$LOG_NAME
+VALIDATE $? "Restart shipping"
+
+END_TIME=$(date +%s)
+echo -e "$Y Script execution time: $(($END_TIME - $START_TIME)) seconds $N" | tee -a "$LOG_NAME"

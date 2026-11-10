@@ -1,44 +1,67 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+# Get user ID
+USERID=$(id -u)
 
-USER_ID=$(id -u)
+# Colors
+R="\e[31m"
+G="\e[32m"
+Y="\e[33m"
+N="\e[0m"
 
-if [ "$USER_ID" -eq 0 ]
+# Log folder and file
+LOG_FOLDER="/var/log/roboshop-logs"
+SCRIPT_NAME=$(basename "$0" .sh)
+LOG_NAME="$LOG_FOLDER/$SCRIPT_NAME.log"
+
+mkdir -p $LOG_FOLDER
+echo "Script started executing at: $(date)" | tee -a $LOG_NAME
+
+# check the user has root privileges or not
+if [ $USERID -ne 0 ]
 then
-  echo "USER have Root Access"
+    echo -e "$R ERROR:: Please run this script with root access $N" | tee -a $LOG_NAME
+    exit 1 #give other than 0 upto 127
 else
-  echo "USER Dont Root Access"
+    echo "You are running with root access" | tee -a $LOG_NAME
 fi
 
-VALIDATE() {
-  if [ $1 -eq 0 ]
-  then
-    echo "$2 ... SUCCESS"
-  else
-    echo "$2 ... FAILED"
-  fi
+# validate functions takes input as exit status, what command they tried to install
+VALIDATE(){
+    if [ $1 -eq 0 ]
+    then
+        echo -e "$2 is ... $G SUCCESS $N" | tee -a $LOG_NAME
+    else
+        echo -e "$2 is ... $R FAILURE $N" | tee -a $LOG_NAME
+        exit 1
+    fi
 }
 
-# copy mongo configuration file
-cp mongo.repo /etc/yum.repos.d/mongo.repo
-VALIDATE $? "Copied configuration file"
 
-# Install Mongodb
-dnf install mongodb-org -y
-VALIDATE $? "Installed mongodb"
+cp mongo.repo /etc/yum.repos.d/mongo.repo &>>$LOG_NAME
+VALIDATE $? "Copying the mongodb repo file"
 
-# Start & Enable the server
-systemctl enable mongod
-VALIDATE $? "Mongo server enabled"
+dnf install mongodb-org -y &>>$LOG_NAME
+VALIDATE $? "Installing mongodb-org"
 
-systemctl start mongod
-VALIDATE $? "Mongo server started"
+systemctl enable mongod &>>$LOG_NAME
+VALIDATE $? "Enabling mongodb service"
 
-# update the port number 127.0.0.1 to 0.0.0.0
-sed -i -e "s/127.0.0.1/0.0.0.0/" /etc/mongod.conf
-VALIDATE $? "Updated port number"
+systemctl start mongod &>>$LOG_NAME
+VALIDATE $? "Starting mongodb service"
 
-# Restart the mongo server
-systemctl restart mongod
-VALIDATE $? "Restarted mongodb server"
+sed -i -e "s/127.0.0.1/0.0.0.0/" /etc/mongod.conf &>>$LOG_NAME
+VALIDATE $? "Updating mongodb bind address"
+
+systemctl restart mongod &>>$LOG_NAME
+VALIDATE $? "Restarting mongodb service"
+
+echo "Script finished executing at: $(date)" | tee -a $LOG_NAME
+
+
+
+
+
+
+
+
